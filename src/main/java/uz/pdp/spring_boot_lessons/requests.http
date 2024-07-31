@@ -1,0 +1,13 @@
+
+GET http://localhost:8081/books
+
+###
+POST http://localhost:8081/add
+Content-Type: Application/json
+Accept: Application/json
+
+{
+  "id": 10,
+  "title": "Jakarta",
+  "author": "Jeck"
+}
