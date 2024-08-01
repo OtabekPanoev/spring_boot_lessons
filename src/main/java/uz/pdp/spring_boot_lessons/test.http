@@ -1,0 +1,18 @@
+
+GET http://localhost:8081/todo/all
+#Accept: application/json
+
+
+###
+GET http://localhost:8081/todo/one/3
+
+###
+POST http://localhost:8081/todo/create
+Content-Type: application/json
+
+{
+  "id": 0,
+  "title": "title_fd53ce649643",
+  "description": "description_28f5f9503f94",
+  "completed": false
+}
