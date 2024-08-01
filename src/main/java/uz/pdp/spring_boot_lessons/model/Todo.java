@@ -1,27 +1,21 @@
 package uz.pdp.spring_boot_lessons.model;
 
 import lombok.*;
+import uz.pdp.spring_boot_lessons.model.enums.StatusEnum;
 
-import java.time.LocalDateTime;
+import java.util.UUID;
 
 @AllArgsConstructor
 @NoArgsConstructor
-@Builder
 @Getter
 @Setter
 public class Todo {
-    private int id;
+    private UUID id;
     private String title;
-    private String description;
-    private boolean completed;
+    private StatusEnum status;
+    private Boolean deleted;
 
-    @Builder.Default
-    private LocalDateTime createdAt = LocalDateTime.now();
-
-    public Todo(int id, String title, String description) {
-        this.id = id;
-        this.title = title;
-        this.description = description;
-        this.createdAt = LocalDateTime.now();
+    public boolean getDeleted() {
+        return deleted != null && deleted;
     }
 }

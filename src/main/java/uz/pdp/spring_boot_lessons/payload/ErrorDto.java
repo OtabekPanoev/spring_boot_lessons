@@ -1,4 +1,4 @@
-package uz.pdp.spring_boot_lessons.exceptions;
+package uz.pdp.spring_boot_lessons.payload;
 
 import lombok.*;
 
@@ -8,7 +8,8 @@ import lombok.*;
 @Setter
 @Builder
 public class ErrorDto {
-    private String message;
-    private String path;
+
     private Integer status;
+    private String path;
+    private Object body;
 }
