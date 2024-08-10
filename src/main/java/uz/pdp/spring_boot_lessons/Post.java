@@ -1,20 +1,16 @@
 package uz.pdp.spring_boot_lessons;
 
-import jakarta.validation.constraints.NotBlank;
 import lombok.*;
 
+@ToString
 @Getter
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-@ToString
-public class Book {
+public class Post {
     private Integer id;
-
-    @NotBlank
+    private Integer userId;
     private String title;
-
-    @NotBlank
-    private String author;
+    private String body;
 }
