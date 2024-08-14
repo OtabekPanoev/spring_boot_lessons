@@ -14,6 +14,7 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.NoOpPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
@@ -42,14 +43,12 @@ public class SecurityConfig {
 //        http.cors().disable();
 
         http.authorizeRequests()
-                .requestMatchers("/home").permitAll()
+                .requestMatchers("/auth/**").permitAll()
                 .anyRequest().authenticated();
 
         http.exceptionHandling()
                 .authenticationEntryPoint(authenticationEntryPoint)
                 .accessDeniedHandler(accessDeniedHandler());
-
-        http.httpBasic();
 
         http.sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS);
 
@@ -57,10 +56,45 @@ public class SecurityConfig {
     }
 
 
+
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
+
+
+    @Bean
+    public UserDetailsService userDetails(PasswordEncoder passwordEncoder) {
+
+        UserDetails admin = User.builder()
+                .username("admin")
+                .password(passwordEncoder.encode("1"))
+                .roles("ADMIN")
+                .build();
+
+        UserDetails manager = User.builder()
+                .username("manager")
+                .password(passwordEncoder.encode("1"))
+                .roles("MANAGER")
+                .build();
+
+        UserDetails user = User.builder()
+                .username("user")
+                .password(passwordEncoder.encode("1"))
+                .roles("USER")
+                .build();
+
+        return new InMemoryUserDetailsManager(user, admin, manager);
+    }
+
+
     @Bean
     public AccessDeniedHandler accessDeniedHandler() {
         return (request, response, accessDeniedException) -> {
             response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+            response.setStatus(HttpStatus.FORBIDDEN.value());
+
+
             ErrorDto errorDto = ErrorDto.builder()
                     .message(accessDeniedException.getMessage())
                     .path(request.getRequestURI())
@@ -73,37 +107,6 @@ public class SecurityConfig {
             objectMapper.writeValue(outputStream, errorDto);
         };
     }
-
-    @Bean
-    public PasswordEncoder passwordEncoder() {
-        return NoOpPasswordEncoder.getInstance();
-    }
-
-
-    @Bean
-    public UserDetailsService userDetails() {
-
-        UserDetails admin = User.builder()
-                .username("admin")
-                .password("1")
-                .roles("ADMIN")
-                .build();
-
-        UserDetails manager = User.builder()
-                .username("manager")
-                .password("1")
-                .roles("MANAGER")
-                .build();
-
-        UserDetails user = User.builder()
-                .username("user")
-                .password("1")
-                .roles("USER")
-                .build();
-
-        return new InMemoryUserDetailsManager(user, admin, manager);
-    }
-
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
