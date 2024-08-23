@@ -5,6 +5,8 @@ import io.lettuce.core.SocketOptions;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cache.CacheManager;
+import org.springframework.cache.annotation.CachingConfigurer;
+import org.springframework.cache.interceptor.CacheErrorHandler;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
@@ -21,10 +23,12 @@ import org.springframework.data.redis.serializer.RedisSerializer;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 
 import java.time.Duration;
+import java.util.HashMap;
+import java.util.Map;
 
 @Configuration
 @EnableConfigurationProperties(CacheConfigProperties.class)
-public class CacheConfig {
+public class CacheConfig implements CachingConfigurer {
 
     @Bean
     public LettuceConnectionFactory redisConnectionFactory(CacheConfigProperties cacheConfigProperties) {
@@ -58,22 +62,39 @@ public class CacheConfig {
         return redisTemplate;
     }
 
-
-    @Bean(name = "cacheManager")
-    @Primary
-    public RedisCacheManager cacheManager(final RedisConnectionFactory connectionFactory) {
-        final RedisCacheWriter redisCacheWriter = RedisCacheWriter.lockingRedisCacheWriter(connectionFactory);
-        RedisCacheConfiguration cacheConfiguration = RedisCacheConfiguration.defaultCacheConfig();
-        cacheConfiguration = cacheConfiguration.entryTtl(Duration.ofMinutes(10));
-        return new RedisCacheManager(redisCacheWriter, cacheConfiguration);
+    private static RedisCacheConfiguration createCacheConfig(long timeoutSeconds) {
+        return RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofSeconds(timeoutSeconds));
     }
 
-    @Bean(name = "shortTimeCacheManager")
-    public RedisCacheManager shortTimeCacheManager(final RedisConnectionFactory connectionFactory) {
-        final RedisCacheWriter redisCacheWriter = RedisCacheWriter.lockingRedisCacheWriter(connectionFactory);
-        RedisCacheConfiguration cacheConfiguration = RedisCacheConfiguration.defaultCacheConfig();
-        cacheConfiguration = cacheConfiguration.entryTtl(Duration.ofSeconds(10));
-        return new RedisCacheManager(redisCacheWriter, cacheConfiguration);
+    @Bean
+    public RedisCacheConfiguration redisCacheConfiguration(CacheConfigProperties cacheConfigProperties) {
+        return createCacheConfig(cacheConfigProperties.getTimeoutSeconds());
+    }
+
+    @Bean
+    public CacheManager cacheManager(RedisConnectionFactory redisConnectionFactory, CacheConfigProperties cacheConfigProperties) {
+        Map<String, RedisCacheConfiguration> cacheConfigurationMap = new HashMap<>();
+        Map<String, Long> specificCacheExpirations = new HashMap<>();
+        specificCacheExpirations.put("panEncrypt", -1L);
+        specificCacheExpirations.put("panDecrypt", -1L);
+        specificCacheExpirations.putAll(CacheNames.EXPIRATIONS);
+
+        cacheConfigProperties.setCacheExpirations(specificCacheExpirations);
+
+        for (Map.Entry<String, Long> cacheNameAndTimeout : cacheConfigProperties.getCacheExpirations().entrySet()) {
+            cacheConfigurationMap.put(cacheNameAndTimeout.getKey(), createCacheConfig(cacheNameAndTimeout.getValue()));
+        }
+        return RedisCacheManager
+                .builder(redisConnectionFactory)
+                .cacheDefaults(redisCacheConfiguration(cacheConfigProperties))
+                .withInitialCacheConfigurations(cacheConfigurationMap)
+                .build();
+    }
+
+
+    @Override
+    public CacheErrorHandler errorHandler() {
+        return new RedisCacheErrorHandler();
     }
 
 }

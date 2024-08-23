@@ -17,14 +17,14 @@ public class RedisController {
         return "Hello1 " + id;
     }
 
-    @Cacheable(value = "hello2", key = "#id", cacheManager = "shortTimeCacheManager")
+    @Cacheable(value = "hello2", key = "#id")
     @GetMapping("/hello2/{id}")
     public String hello2(@PathVariable Integer id) {
         System.out.println("--------Cash hello2---------");
         return "Hello1 " + id;
     }
 
-    @Cacheable(value = "hello3", key = "#id", cacheManager = "shortTimeCacheManager")
+    @Cacheable(value = "hello3", key = "#id")
     @GetMapping("/hello3/{id}")
     public BeltLogRes hello3(@PathVariable Integer id) {
         System.out.println("--------Cash hello3---------");
